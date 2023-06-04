@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 )
 
 type config struct {
@@ -17,6 +17,7 @@ type config struct {
 var NoNameError = errors.New("No name! Enter Your name")
 var InvalidArgs = errors.New("Invalid Number of Args")
 var ArgsLessThanZero = errors.New("Must speckify a number grater than 0")
+var PositionalInvalid = errors.New("Positional Specifed")
 
 func validateArgs(c config) error {
 	if !c.printUsage && !(c.numTimes > 0) {
@@ -25,29 +26,23 @@ func validateArgs(c config) error {
 	return nil
 }
 
-func parseArgs(args []string) (config, error) {
-
-	var numTimes int
-	var err error
+func parseArgs(w io.Writer, args []string) (config, error) {
 
 	c := config{}
+	fs := flag.NewFlagSet("greeter", flag.ContinueOnError)
+	fs.SetOutput(w)
+	fs.IntVar(&c.numTimes, "n", 0, "number of times to greet")
 
-	if len(args) != 1 {
-		return c, InvalidArgs
-	}
-	if args[0] == "-h" || args[0] == "--help" {
-		c.printUsage = true
-		return c, nil
-	}
-
-	numTimes, err = strconv.Atoi(args[0])
+	err := fs.Parse(args)
 	if err != nil {
 		return c, err
 	}
 
-	c.numTimes = numTimes
+	if fs.NArg() != 0 {
+		return c, PositionalInvalid
+	}
 
-	return c, err
+	return c, nil
 }
 
 func GetName(r io.Reader, w io.Writer) (string, error) {
@@ -100,10 +95,14 @@ func main() {
 
 	fmt.Printf("Hello World %v\n", "hi")
 
-	c, err := parseArgs(os.Args[1:])
+	c, err := parseArgs(os.Stdout, os.Args[1:])
 
 	if err != nil {
-		fmt.Fprintln(os.Stdout, err)
+		if errors.Is(err, PositionalInvalid) {
+			fmt.Fprintln(os.Stdout, "으악")
+		} else {
+			fmt.Fprintln(os.Stdout, err)
+		}
 		os.Exit(1)
 	}
 
