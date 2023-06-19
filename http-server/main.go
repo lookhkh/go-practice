@@ -97,7 +97,7 @@ func longRunningProcess(logwriter *io.PipeWriter) {
 		time.Sleep(1 * time.Second)
 	}
 	logwriter.Close()
-
+	log.Fatal("log addd")
 }
 
 func longRunningProcessHandler(w http.ResponseWriter, r *http.Request) {
